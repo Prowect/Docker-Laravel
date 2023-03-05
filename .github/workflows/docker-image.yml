@@ -28,9 +28,9 @@ jobs:
         id: gen_tags
         run: |
           if [[ $GITHUB_REF == 'refs/tags/'* ]]; then
-            TAGS='["prowect/laravel:latest","prowect/laravel:'${GITHUB_REF/refs\/tags\//}'"]'
+            TAGS='prowect/laravel:${GITHUB_REF/refs\/tags\//}]'
           else
-            TAGS='["prowect/laravel:latest"]'
+            TAGS='prowect/laravel:latest'
           fi
           echo '::set-output name=tags::'$TAGS
 
@@ -39,4 +39,4 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ fromJson(steps.gen_tags.outputs.tags) }}
+          tags: ${{ steps.gen_tags.outputs.tags }}
