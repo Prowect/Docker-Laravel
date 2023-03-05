@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ "$HORIZON_ENABLED" == "true" ]; then
+    echo "Starting laravel horizon"
+    /usr/bin/php /data/www/artisan horizon
+elif [ "$QUEUE_CONNECTION" != "sync" ]; then
+    echo "Starting laravel queue worker"
+    /usr/bin/php /data/www/artisan queue:work --daemon --sleep=${QUEUE_CONNECTION_SLEEP:-"3"} --tries=${QUEUE_CONNECTION_TRIES:-"1"} --memory=${QUEUE_CONNECTION_MEMORY:-"512M"}
+else
+    echo "Queue Worker - skipped (because not enabled)"
+    sv down queue-worker
+fi

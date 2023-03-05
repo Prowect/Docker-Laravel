@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/usr/sbin/${PHP_FPM_VERSION} -c /etc/${PHP_VERSION}/fpm
