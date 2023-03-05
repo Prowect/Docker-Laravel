@@ -32,11 +32,11 @@ jobs:
           else
             TAGS='prowect/laravel:latest'
           fi
-          echo '::set-output name=tags::'$TAGS
+          echo "tags=$TAGS" >> $GITHUB_ENV
 
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.gen_tags.outputs.tags }}
+          tags: ${{ env.tags }}
