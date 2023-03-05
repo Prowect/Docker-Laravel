@@ -23,10 +23,21 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: Generate tags
+        id: gen_tags
+        run: |
+          if [[ $GITHUB_REF == 'refs/tags/'* ]]; then
+            TAGS='["prowect/laravel:latest","prowect/laravel:'${GITHUB_REF/refs\/tags\//}'"]'
+          else
+            TAGS='["prowect/laravel:latest"]'
+          fi
+          echo '::set-output name=tags::'$TAGS
 
       - name: Build and push
         uses: docker/build-push-action@v4
+        needs: gen_tags
         with:
-          platforms: linux/amd64,linux/arm64,linux/arm64/v8
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: prowect/laravel:latest
+          tags: ${{ fromJson(steps.gen_tags.outputs.tags) }}
