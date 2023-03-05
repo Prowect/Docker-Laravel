@@ -28,11 +28,10 @@ jobs:
         id: gen_tags
         run: |
           if [[ $GITHUB_REF == 'refs/tags/'* ]]; then
-            TAGS='prowect/laravel:${GITHUB_REF/refs\/tags\//}]'
+            echo "tags=prowect/laravel:${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
           else
-            TAGS='prowect/laravel:latest'
+            echo "tags=prowect/laravel:latest" >> $GITHUB_ENV
           fi
-          echo "tags=$TAGS" >> $GITHUB_ENV
 
       - name: Build and push
         uses: docker/build-push-action@v4
