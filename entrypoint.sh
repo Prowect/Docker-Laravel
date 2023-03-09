@@ -83,8 +83,8 @@ if [ ! -z "$PASSPORT_ENABLED" ]; then
     fi
 fi
 
-# Set permissions for nginx /data/www (except storage & node_modules)
-chown -R nginx:nginx $(ls | awk '{if($1 != "storage" && $1 != "node_modules"){ print $1 }}')
+# Set permissions for nginx /data/www 
+chown -R nginx:nginx /data/www &
 
 # migrate and seed database if needed
 if [ ! -z "$DB_CONNECTION" ]; then
