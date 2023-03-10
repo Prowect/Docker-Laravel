@@ -40,12 +40,6 @@ elif [[ ! -d "$COMPOSER_DIRECTORY" ]]; then
     composer install --no-scripts
 fi
 
-# Turn laravel maintenance mode on until we were finished
-php artisan down
-
-# create storage symlink (because we cannot access storage outside of public directory)
-php /data/www/artisan storage:link
-
 # Setup node_modules if not present
 NODE_MODULES_DIRECTORY="/data/www/node_modules";
 if [[ ! -d "$NODE_MODULES_DIRECTORY" ]]; then
@@ -60,8 +54,13 @@ mkdir -p /data/www/storage/framework/cache && \
 mkdir -p /data/www/storage/framework/sessions && \
 mkdir -p /data/www/storage/framework/views && \
 mkdir -p /data/www/storage/logs
-chown nginx:nginx /data/www/storage && \
-chown nginx:nginx /data/www/storage/*
+
+# create storage symlink (because we cannot access storage outside of public directory)
+STORAGE_LINK_PATH="/data/www/public/storage"
+if [[ ! -L "$STORAGE_LINK_PATH" ]]; then
+    echo -e "${BASH_COLOR_WARNING}Creating laravel storage link ...${BASH_COLOR_RESET}"
+    php /data/www/artisan storage:link
+fi
 
 # Clear and fill laravel caches
 php /data/www/artisan cache:clear
@@ -69,7 +68,7 @@ php /data/www/artisan config:clear
 php /data/www/artisan route:clear
 APP_ENV=${APP_ENV:="production"}
 if [ "$APP_ENV" != "local" ]; then # create caches (prepare for production)
-    echo "Preparing cache for environment $APP_ENV"
+    echo -e "Preparing cache for environment ${BASH_COLOR_WARNING}$APP_ENV${BASH_COLOR_RESET}"
     php /data/www/artisan config:cache
     php /data/www/artisan route:cache
 fi
@@ -116,11 +115,8 @@ if [[ -f "$ADDITIONAL_ENTRYPOINT_FILE" ]]; then
     exec $ADDITIONAL_ENTRYPOINT_FILE
 fi
 
-# Turn of laravel maintenance mode
-php artisan up
-
 # Run background jobs (runsv) or execute given CMD
-if [ -z "$@" ]; then
+if [ -z "$*" ]; then
     echo -e "${BASH_COLOR_DARK}Starting daemons and background jobs ...${BASH_COLOR_RESET}"
     /sbin/runsvdir /etc/service
 else

@@ -1,9 +1,7 @@
 FROM nginx:1.23.3-alpine 
-# TODO:  also try 1.23.3-alpine-slim
 
 LABEL org.opencontainers.image.title="Docker Laravel by Prowect"
 LABEL org.opencontainers.image.description="Docker image for Laravel applications"
-LABEL org.opencontainers.image.version="1.0.0"
 LABEL org.opencontainers.image.authors="office@prowect.com"
 LABEL org.opencontainers.image.source="https://github.com/Prowect/Docker-Laravel"
 
