@@ -98,7 +98,7 @@ For using this image in production we suggest: building your own Docker image, u
 
 ```Dockerfile
 # BUILD
-FROM prowect-laravel as build
+FROM prowect/laravel as build
 
 # copy your laravel files to /data/www
 COPY ./src /data/www
@@ -107,7 +107,7 @@ COPY ./src /data/www
 RUN /main-entrypoint.sh echo "Build complete"
 
 # BUNDLE
-FROM prowect-laravel
+FROM prowect/laravel
 
 # copy pre-built files to the new container (to start even faster)
 COPY --from=build /data/www /data/www

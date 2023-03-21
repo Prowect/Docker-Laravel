@@ -9,6 +9,10 @@ else
     VITE_BUILD_DIRECTORY="/data/www/public/build"
     if [[ ! -d "$VITE_BUILD_DIRECTORY" ]]; then
         npm run build
+
+        echo "Deleting node modules ..."
+        rm -rf /app/node_modules
+        echo "Build complete"
     fi
 
     sv down vite
