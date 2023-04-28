@@ -82,6 +82,18 @@ if [ ! -z "$PASSPORT_ENABLED" ]; then
     fi
 fi
 
+# Enable/disable XDEBUG
+XDEBUG_INI_PATH="/etc/${PHP_VERSION}/conf.d/xdebug.ini"
+if [[ ! -z "$XDEBUG_ENABLED" ]] && [[ "$XDEBUG_ENABLED" == "true" ]]; then
+    echo -e "${BASH_COLOR_WARNING}Enabling XDEBUG${BASH_COLOR_RESET}"
+    ln -sf /etc/${PHP_VERSION}/templates/xdebug.ini $XDEBUG_INI_PATH
+else 
+    echo -e "${BASH_COLOR_WARNING}Disabling XDEBUG${BASH_COLOR_RESET}"
+    if [ -L ${XDEBUG_INI_PATH} ] ; then
+        unlink $XDEBUG_INI_PATH
+    fi
+fi
+
 # Set permissions for nginx /data/www 
 chown -R nginx:nginx /data/www &
 

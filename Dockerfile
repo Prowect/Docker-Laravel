@@ -46,7 +46,8 @@ RUN apk --update add --no-cache \
         ${PHP_VERSION}-pcntl@community \
         ${PHP_VERSION}-simplexml@community \
         ${PHP_VERSION}-xmlreader@community \
-        ${PHP_VERSION}-zip@community
+        ${PHP_VERSION}-zip@community \
+        ${PHP_VERSION}-xdebug@community
 
 # install composer
 RUN curl http://getcomposer.org/composer.phar > composer.phar && \
@@ -64,6 +65,7 @@ RUN ln -sf /var/log/${PHP_VERSION}/error.log /dev/stderr
 # add custom config (feel free to override this files by yourself)
 ADD config/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 ADD config/vim/vimrc /etc/vim/vimrc
+ADD config/php/xdebug/xdebug.ini /etc/${PHP_VERSION}/templates/xdebug.ini
 
 RUN sed -i \
     -e "s|user = nobody|user = nginx|" \

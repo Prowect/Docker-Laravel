@@ -75,7 +75,32 @@ Following environments are known by the image:
 | `DB_CONNECTION`           |               | `mysql` / `pgsql`, …                   | This is required to use database functions are described in the following
 | `ONSTART_MIGRATE`         | `false`       | `true` / `false`                       | Automatically runs database migrations on start up using `php artisan migrate`
 | `ONSTART_SEEDER`          | `false`       | `true` / `false` / `<SeederClassName>` | Automatically runs database seeder on start up. If `true` the default seeder (=DatabaseSeeder) is used, but you can also provide the class name of your own seeder, to use this one instead.
+| `XDEBUG_ENABLED`          | `false`       | `true` / `false`                       | Activate PHP Xdebug for debugging your application
 
+### PHP Xdebug
+
+PHP Xdebug is already preinstalled an would listen to: `host.docker.internal` and port: `9003` as default, which should work fine when working on  You can change this behaviour by overriding: `xdebug.ini`.
+To enable PHP Xdebug you have to define: `XDEBUG_ENABLED` environment variable.
+You also have to specify settings in your used IDE, for VSCode it would look like that:
+
+**launch.json**
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Listen for Xdebug",
+            "type": "php",
+            "request": "launch",
+            "port": 9003,
+            "pathMappings": {
+                "/data/www/": "${workspaceFolder}/src"
+            }
+        }
+    ]
+}
+```
 
 ### Vite
 
