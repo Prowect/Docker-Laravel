@@ -7,11 +7,11 @@ if [ "$APP_ENV" == "local" ]; then
     npm run dev
 else
     VITE_BUILD_DIRECTORY="/data/www/public/build"
-    if [[ ! -d "$VITE_BUILD_DIRECTORY" ]]; then
+    if [ ! -d "$VITE_BUILD_DIRECTORY" ] || [ -z "$(ls -A "$VITE_BUILD_DIRECTORY")" ]; then
         npm run build
 
         echo "Deleting node modules ..."
-        rm -rf /app/node_modules
+        rm -rf /data/www/node_modules
         echo "Build complete"
     fi
 

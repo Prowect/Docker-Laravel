@@ -1,13 +1,13 @@
-FROM nginx:1.23.3-alpine 
+FROM nginx:1.29.0-alpine
 
 LABEL org.opencontainers.image.title="Docker Laravel by Prowect"
 LABEL org.opencontainers.image.description="Docker image for Laravel applications"
 LABEL org.opencontainers.image.authors="office@prowect.com"
 LABEL org.opencontainers.image.source="https://github.com/Prowect/Docker-Laravel"
 
-ENV ALPINE_VERSION v3.17
-ENV PHP_VERSION php81
-ENV PHP_FPM_VERSION php-fpm81
+ENV ALPINE_VERSION=v3.22
+ENV PHP_VERSION=php83
+ENV PHP_FPM_VERSION=php-fpm83
 
 # install 
 RUN \
@@ -15,57 +15,62 @@ RUN \
     echo "@community https://dl-cdn.alpinelinux.org/alpine/$ALPINE_VERSION/community" >> /etc/apk/repositories && \
     apk --update add --no-cache \
         curl \
-        vim \
         nghttp2 \
-        runit@community
-
-# install PHP (incl. required extensions for laravel)
-RUN apk --update add --no-cache \
-        ${PHP_VERSION}@community \
-        ${PHP_VERSION}-dom@community \
+        runit@community \
+        vim \
+    && \
+    # install PHP (incl. required extensions for laravel)
+    apk --update add --no-cache \
         ${PHP_VERSION}-ctype@community \
         ${PHP_VERSION}-curl@community \
+        ${PHP_VERSION}-dom@community \
+        ${PHP_VERSION}-exif@community \
+        ${PHP_VERSION}-fileinfo@community \
         ${PHP_VERSION}-fpm@community \
         ${PHP_VERSION}-gd@community \
+        ${PHP_VERSION}-iconv@community \
         ${PHP_VERSION}-intl@community \
         ${PHP_VERSION}-json@community \
         ${PHP_VERSION}-mbstring@community \
         ${PHP_VERSION}-opcache@community \
-        ${PHP_VERSION}-posix@community \
-        ${PHP_VERSION}-session@community \
-        ${PHP_VERSION}-xml@community \
-        ${PHP_VERSION}-iconv@community \
-        ${PHP_VERSION}-phar@community \
         ${PHP_VERSION}-openssl@community \
-        ${PHP_VERSION}-xmlwriter@community \
+        ${PHP_VERSION}-pcntl@community \
         ${PHP_VERSION}-pdo@community \
         ${PHP_VERSION}-pdo_mysql@community \
-        ${PHP_VERSION}-exif@community \
-        ${PHP_VERSION}-tokenizer@community \
-        ${PHP_VERSION}-fileinfo@community \
-        ${PHP_VERSION}-pcntl@community \
+        ${PHP_VERSION}-pdo_sqlite@community \
+        ${PHP_VERSION}-pdo_pgsql@community \
+        ${PHP_VERSION}-phar@community \
+        ${PHP_VERSION}-posix@community \
+        ${PHP_VERSION}-redis@community \
+        ${PHP_VERSION}-session@community \
         ${PHP_VERSION}-simplexml@community \
+        ${PHP_VERSION}-tokenizer@community \
+        ${PHP_VERSION}-xdebug@community \
+        ${PHP_VERSION}-xml@community \
         ${PHP_VERSION}-xmlreader@community \
+        ${PHP_VERSION}-xmlwriter@community \
         ${PHP_VERSION}-zip@community \
-        ${PHP_VERSION}-xdebug@community
+        ${PHP_VERSION}@community
 
 # install composer
-RUN curl http://getcomposer.org/composer.phar > composer.phar && \
-    mv composer.phar /usr/local/bin/composer && \
-    chmod +x /usr/local/bin/composer
-
-# install other packages (required for Laravel)
-RUN apk --update add --no-cache \
+ADD https://getcomposer.org/composer.phar /usr/local/bin/composer
+RUN chmod +x /usr/local/bin/composer && \
+    composer self-update --no-interaction --2 && \
+    # install other packages (required for Laravel)
+    apk --update add --no-cache \
         nodejs-current@community \
-        npm@community
+        npm@community \
+    && \
+    # cleanup apk
+    apk --purge && rm -rf /var/cache/apk/*
 
 # forward logs to stdout and stderr
 RUN ln -sf /var/log/${PHP_VERSION}/error.log /dev/stderr
 
 # add custom config (feel free to override this files by yourself)
-ADD config/nginx/nginx.conf /etc/nginx/conf.d/default.conf
-ADD config/vim/vimrc /etc/vim/vimrc
-ADD config/php/xdebug/xdebug.ini /etc/${PHP_VERSION}/templates/xdebug.ini
+COPY config/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+COPY config/vim/vimrc /etc/vim/vimrc
+COPY config/php/xdebug/xdebug.ini /etc/${PHP_VERSION}/templates/xdebug.ini
 
 RUN sed -i \
     -e "s|user = nobody|user = nginx|" \
@@ -86,15 +91,15 @@ RUN sed -i -e "s|upload_max_filesize\s*=.*|upload_max_filesize = 128M|" \
     /etc/${PHP_VERSION}/php.ini
 
 # add runsvdir services
-ADD service/crontab.service /etc/service/crontab/run
-ADD service/nginx.service /etc/service/nginx/run
-ADD service/php-fpm.service /etc/service/php-fpm/run
-ADD service/queue-worker.service /etc/service/queue-worker/run
-ADD service/vite.service /etc/service/vite/run
+COPY service/crontab.service /etc/service/crontab/run
+COPY service/nginx.service /etc/service/nginx/run
+COPY service/php-fpm.service /etc/service/php-fpm/run
+COPY service/queue-worker.service /etc/service/queue-worker/run
+COPY service/vite.service /etc/service/vite/run
 RUN chmod +x /etc/service/*/run
 
 # add entrypoint (startup script)
-ADD entrypoint.sh /main-entrypoint.sh
+COPY entrypoint.sh /main-entrypoint.sh
 RUN chmod +x /main-entrypoint.sh
 
 # inject laravel cronjobs

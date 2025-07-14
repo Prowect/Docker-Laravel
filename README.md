@@ -3,11 +3,11 @@
 This Docker image provides everything you need to set up a Laravel application. With this image you can start developing directly without any dependencies.
 
 Following packages are included:
- - PHP (8.1)
- - PHP-FPM (8.1)
+ - PHP (8.3)
+ - PHP-FPM (8.3)
  - Composer
- - NGINX (1.23)
- - Node (19.7)
+ - NGINX (1.29)
+ - Node (23.11)
  - NPM
 
 Also already included/supported:
@@ -123,7 +123,7 @@ For using this image in production we suggest: building your own Docker image, u
 
 ```Dockerfile
 # BUILD
-FROM prowect/laravel as build
+FROM prowect/laravel AS build
 
 # copy your laravel files to /data/www
 COPY ./src /data/www

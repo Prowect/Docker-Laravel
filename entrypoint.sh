@@ -43,7 +43,7 @@ fi
 # Setup node_modules if not present
 NODE_MODULES_DIRECTORY="/data/www/node_modules";
 if [[ ! -d "$NODE_MODULES_DIRECTORY" ]]; then
-    npm install
+    npm ci
 fi
 
 # Create storage folders (they may not exist when mounted)
@@ -109,10 +109,10 @@ if [ ! -z "$DB_CONNECTION" ]; then
     if [ ! -z "$ONSTART_SEEDER" ]; then # default: ONSTART_SEEDER=
         if [ "$ONSTART_SEEDER" == "true" ]; then
             echo -e "${BASH_COLOR_WARNING}Seeding database using default seeder${BASH_COLOR_RESET}"
-            php /data/www/artisan db:seed --force
+            php /data/www/artisan db:seed --force &
         else
             echo -e "${BASH_COLOR_WARNING}Seeding database using ${ONSTART_SEEDER}${BASH_COLOR_RESET}"
-            php /data/www/artisan db:seed --class=$ONSTART_SEEDER --force
+            php /data/www/artisan db:seed --class=$ONSTART_SEEDER --force &
         fi
     fi
 else
@@ -130,7 +130,7 @@ fi
 # Run background jobs (runsv) or execute given CMD
 if [ -z "$*" ]; then
     echo -e "${BASH_COLOR_DARK}Starting daemons and background jobs ...${BASH_COLOR_RESET}"
-    /sbin/runsvdir /etc/service
+    /usr/bin/runsvdir /etc/service
 else
     exec "$@"
 fi
