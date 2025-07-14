@@ -62,7 +62,7 @@ RUN chmod +x /usr/local/bin/composer && \
         npm@community \
     && \
     # cleanup apk
-    apk --purge && rm -rf /var/cache/apk/*
+    rm -rf /var/cache/apk/*
 
 # forward logs to stdout and stderr
 RUN ln -sf /var/log/${PHP_VERSION}/error.log /dev/stderr
