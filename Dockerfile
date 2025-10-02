@@ -1,4 +1,4 @@
-FROM nginx:1.29.0-alpine
+FROM nginx:1.29.1-alpine
 
 LABEL org.opencontainers.image.title="Docker Laravel by Prowect"
 LABEL org.opencontainers.image.description="Docker image for Laravel applications"
@@ -15,6 +15,8 @@ RUN \
     echo "@community https://dl-cdn.alpinelinux.org/alpine/$ALPINE_VERSION/community" >> /etc/apk/repositories && \
     apk --update add --no-cache \
         curl \
+        exiftool \
+        imagemagick \
         nghttp2 \
         runit@community \
         vim \
@@ -37,13 +39,15 @@ RUN \
         ${PHP_VERSION}-pcntl@community \
         ${PHP_VERSION}-pdo@community \
         ${PHP_VERSION}-pdo_mysql@community \
-        ${PHP_VERSION}-pdo_sqlite@community \
         ${PHP_VERSION}-pdo_pgsql@community \
+        ${PHP_VERSION}-pdo_sqlite@community \
+        ${PHP_VERSION}-pecl-imagick@community \
         ${PHP_VERSION}-phar@community \
         ${PHP_VERSION}-posix@community \
         ${PHP_VERSION}-redis@community \
         ${PHP_VERSION}-session@community \
         ${PHP_VERSION}-simplexml@community \
+        ${PHP_VERSION}-sodium@community \
         ${PHP_VERSION}-tokenizer@community \
         ${PHP_VERSION}-xdebug@community \
         ${PHP_VERSION}-xml@community \
@@ -62,10 +66,10 @@ RUN chmod +x /usr/local/bin/composer && \
         npm@community \
     && \
     # cleanup apk
-    rm -rf /var/cache/apk/*
-
-# forward logs to stdout and stderr
-RUN ln -sf /var/log/${PHP_VERSION}/error.log /dev/stderr
+    rm -rf /var/cache/apk/* \
+    && \
+    # forward logs to stdout and stderr
+    ln -sf /var/log/${PHP_VERSION}/error.log /dev/stderr
 
 # add custom config (feel free to override this files by yourself)
 COPY config/nginx/nginx.conf /etc/nginx/conf.d/default.conf
@@ -77,14 +81,14 @@ RUN sed -i \
     -e "s|;php_admin_value\[error_log\]\s=.*|php_admin_value\[error_log\] = /var/log/${PHP_VERSION}/error.log|" \
     -e "s|;php_admin_flag\[log_errors\]\s=.*|php_admin_flag[log_errors] = on|" \
     -e "s/;clear_env = no/clear_env = no/g" \
-    /etc/${PHP_VERSION}/php-fpm.d/www.conf
-
-RUN sed -i -e "s|;daemonize\s*=.*|daemonize = no|" \
+    /etc/${PHP_VERSION}/php-fpm.d/www.conf \
+    && \
+    sed -i -e "s|;daemonize\s*=.*|daemonize = no|" \
     -e "s|listen\s*=.*|listen = 9000|" \
     -e "s|;error_log = log/${PHP_VERSION}/error.log|error_log = log/nginx/error.log|" \
-    /etc/${PHP_VERSION}/php-fpm.conf
-
-RUN sed -i -e "s|upload_max_filesize\s*=.*|upload_max_filesize = 128M|" \
+    /etc/${PHP_VERSION}/php-fpm.conf \
+    && \
+    sed -i -e "s|upload_max_filesize\s*=.*|upload_max_filesize = 128M|" \
     -e "s|max_file_uploads\s*=.*|max_file_uploads = 50|" \
     -e "s|post_max_size\s*=.*|post_max_size = 128M|" \
     -e "s|;cgi.fix_pathinfo\s*=.*|cgi.fix_pathinfo = 1|" \

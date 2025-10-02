@@ -75,6 +75,7 @@ Following environments are known by the image:
 | `DB_CONNECTION`           |               | `mysql` / `pgsql`, …                   | This is required to use database functions are described in the following
 | `ONSTART_MIGRATE`         | `false`       | `true` / `false`                       | Automatically runs database migrations on start up using `php artisan migrate`
 | `ONSTART_SEEDER`          | `false`       | `true` / `false` / `<SeederClassName>` | Automatically runs database seeder on start up. If `true` the default seeder (=DatabaseSeeder) is used, but you can also provide the class name of your own seeder, to use this one instead.
+| `ONSTART_SEEDER_WAIT`     | `false`       | `true` / `false`                       | If `true` the seeder is executed on startup and the application will wait until this is finished. If `false` the seeder is executed in background, so the application will be available directly, but the seeder might not be finished when you start using the application. This could be necessary, if running unit tests on startup, for example.
 | `XDEBUG_ENABLED`          | `false`       | `true` / `false`                       | Activate PHP Xdebug for debugging your application
 
 ### PHP Xdebug
@@ -129,7 +130,7 @@ FROM prowect/laravel AS build
 COPY ./src /data/www
 
 # automatic magic builds your Laravel application with dependencies, etc.
-RUN /main-entrypoint.sh echo "Build complete"
+RUN MODE=build /main-entrypoint.sh echo "Build complete"
 
 # BUNDLE
 FROM prowect/laravel

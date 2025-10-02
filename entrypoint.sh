@@ -23,7 +23,18 @@ $BASH_COLOR_PRIMARY          ##########
 
 $BASH_COLOR_RESET"
 
-echo -e "${BASH_COLOR_DARK}Starting Docker Laravel ...${BASH_COLOR_RESET}"
+export MODE=${MODE:-"run"}
+export IS_BUILD_MODE=$([ "$MODE" = "build" ] && echo true || echo false)
+export IS_DEV_MODE=$([ "$MODE" = "dev" -o "$APP_ENV" = "local" ] && echo true || echo false)
+export IS_RUN_MODE=$([ "$MODE" = "run" -o "$APP_ENV" = "production" ] && echo true || echo false)
+
+echo -e "${BASH_COLOR_DARK}Current mode: ${BASH_COLOR_PRIMARY}$MODE${BASH_COLOR_RESET}"
+
+if [ "$IS_BUILD_MODE" = true ]; then
+    echo -e "${BASH_COLOR_DARK}Running container build ...${BASH_COLOR_RESET}"
+else
+    echo -e "${BASH_COLOR_DARK}Starting Docker Laravel ...${BASH_COLOR_RESET}"
+fi
 
 # Setup laravel/install composer packages if not present
 LARAVEL_BOOTSTRAP_APP_FILE="/data/www/bootstrap/app.php"
@@ -42,7 +53,8 @@ fi
 
 # Setup node_modules if not present
 NODE_MODULES_DIRECTORY="/data/www/node_modules";
-if [[ ! -d "$NODE_MODULES_DIRECTORY" ]]; then
+# only for build or dev mode
+if [ ! -d "$NODE_MODULES_DIRECTORY" ] && { [ "$IS_BUILD_MODE" = true ] || [ "$IS_DEV_MODE" = true ]; }; then
     npm ci
 fi
 
@@ -63,6 +75,7 @@ if [[ ! -L "$STORAGE_LINK_PATH" ]]; then
 fi
 
 # Clear and fill laravel caches
+echo -e "${BASH_COLOR_WARNING}Clearing laravel caches ...${BASH_COLOR_RESET}"
 php /data/www/artisan cache:clear
 php /data/www/artisan config:clear
 php /data/www/artisan route:clear
@@ -94,8 +107,26 @@ else
     fi
 fi
 
-# Set permissions for nginx /data/www 
-chown -R nginx:nginx /data/www &
+# Do a vite build (in build mode)
+if [ "$IS_BUILD_MODE" = true ]; then
+    VITE_BUILD_DIRECTORY="/data/www/public/build"
+    if [ ! -d "$VITE_BUILD_DIRECTORY" ] || [ -z "$(ls -A "$VITE_BUILD_DIRECTORY")" ]; then
+        echo -e "${BASH_COLOR_WARNING}Running vite build ...${BASH_COLOR_RESET}"
+        npm --prefix /data/www run build
+
+        echo "Deleting node modules ..."
+        rm -rf /data/www/node_modules
+        echo "Build complete"
+    fi
+fi
+
+# Set permissions for nginx /data/www
+echo -e "${BASH_COLOR_WARNING}Setting permissions for /data/www ...${BASH_COLOR_RESET}"
+if [ "$IS_BUILD_MODE" = true ]; then
+    chown -R nginx:nginx /data/www
+else
+    chown -R nginx:nginx /data/www &
+fi
 
 # migrate and seed database if needed
 if [ ! -z "$DB_CONNECTION" ]; then
@@ -107,12 +138,18 @@ if [ ! -z "$DB_CONNECTION" ]; then
 
     # seed seeder
     if [ ! -z "$ONSTART_SEEDER" ]; then # default: ONSTART_SEEDER=
+        SEEDER_WAIT=${ONSTART_SEEDER_WAIT:-false}
+        SEED_CMD="php /data/www/artisan db:seed --force"
         if [ "$ONSTART_SEEDER" == "true" ]; then
             echo -e "${BASH_COLOR_WARNING}Seeding database using default seeder${BASH_COLOR_RESET}"
-            php /data/www/artisan db:seed --force &
         else
             echo -e "${BASH_COLOR_WARNING}Seeding database using ${ONSTART_SEEDER}${BASH_COLOR_RESET}"
-            php /data/www/artisan db:seed --class=$ONSTART_SEEDER --force &
+            SEED_CMD="$SEED_CMD --class=$ONSTART_SEEDER"
+        fi
+        if [ "$SEEDER_WAIT" == "true" ]; then
+            $SEED_CMD
+        else
+            $SEED_CMD &
         fi
     fi
 else
