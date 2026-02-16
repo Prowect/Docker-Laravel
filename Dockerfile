@@ -100,6 +100,7 @@ COPY service/nginx.service /etc/service/nginx/run
 COPY service/php-fpm.service /etc/service/php-fpm/run
 COPY service/queue-worker.service /etc/service/queue-worker/run
 COPY service/vite.service /etc/service/vite/run
+COPY service/inertia-ssr.service /etc/service/inertia-ssr/run
 RUN chmod +x /etc/service/*/run
 
 # add entrypoint (startup script)

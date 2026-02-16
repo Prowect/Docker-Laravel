@@ -114,8 +114,17 @@ if [ "$IS_BUILD_MODE" = true ]; then
         echo -e "${BASH_COLOR_WARNING}Running vite build ...${BASH_COLOR_RESET}"
         npm --prefix /data/www run build
 
-        echo "Deleting node modules ..."
-        rm -rf /data/www/node_modules
+        # check if inertia-ssr is available within the project
+        INERTIA_BOOTSTRAP_DIRECTORY="/data/www/bootstrap/ssr"
+        if [ ! -d "$INERTIA_BOOTSTRAP_DIRECTORY" ]; then
+            echo -e "${BASH_COLOR_WARNING}Running vite build for inertia-ssr ...${BASH_COLOR_RESET}"
+            npm --prefix /data/www run build -- --ssr
+            # inertia requires the node_modules folder for the inertia build, so we cannot delete it after the build
+        else
+            echo "Deleting node modules ..."
+            rm -rf /data/www/node_modules
+        fi
+
         echo "Build complete"
     fi
 fi

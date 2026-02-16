@@ -77,6 +77,7 @@ Following environments are known by the image:
 | `ONSTART_SEEDER`          | `false`       | `true` / `false` / `<SeederClassName>` | Automatically runs database seeder on start up. If `true` the default seeder (=DatabaseSeeder) is used, but you can also provide the class name of your own seeder, to use this one instead.
 | `ONSTART_SEEDER_WAIT`     | `false`       | `true` / `false`                       | If `true` the seeder is executed on startup and the application will wait until this is finished. If `false` the seeder is executed in background, so the application will be available directly, but the seeder might not be finished when you start using the application. This could be necessary, if running unit tests on startup, for example.
 | `XDEBUG_ENABLED`          | `false`       | `true` / `false`                       | Activate PHP Xdebug for debugging your application
+| `INERTIA_SSR_ENABLED`     | `false`       | `true` / `false`                       | Activate Inertia SSR for server side rendering of your Inertia application (please note: that Laravel Inertia SSR needs to be installed first)
 
 ### PHP Xdebug
 
