@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 export BASH_COLOR_PRIMARY='\033[1;36m'
 export BASH_COLOR_DARK='\033[1;30m'
@@ -38,17 +39,22 @@ fi
 
 # Setup laravel/install composer packages if not present
 LARAVEL_BOOTSTRAP_APP_FILE="/data/www/bootstrap/app.php"
-COMPOSER_DIRECTORY="/data/www/vendor"
+COMPOSER_AUTOLOAD_FILE="/data/www/vendor/autoload.php"
 if [[ ! -f "$LARAVEL_BOOTSTRAP_APP_FILE" ]]; then
     echo -e "${BASH_COLOR_WARNING}No laravel source files detected. Installing a new laravel instance ...${BASH_COLOR_RESET}"
 
     composer create-project laravel/laravel .
 
     echo -e "${BASH_COLOR_SUCCESS}Laravel has been installed: ${BASH_COLOR_PRIMARY}$(php artisan --version)${BASH_COLOR_RESET}"
-elif [[ ! -d "$COMPOSER_DIRECTORY" ]]; then
+elif [[ ! -f "$COMPOSER_AUTOLOAD_FILE" ]]; then
     echo -e "${BASH_COLOR_WARNING}Installing composer dependencies ...${BASH_COLOR_RESET}"
 
-    composer install --no-scripts
+    composer install --no-interaction --prefer-dist --no-progress --no-scripts
+fi
+
+if [[ -f "$LARAVEL_BOOTSTRAP_APP_FILE" ]] && [[ ! -f "$COMPOSER_AUTOLOAD_FILE" ]]; then
+    echo -e "${BASH_COLOR_ERROR}Composer dependencies are missing.${BASH_COLOR_RESET}"
+    exit 1
 fi
 
 # Setup node_modules if not present

@@ -1,13 +1,13 @@
-FROM nginx:1.29.1-alpine
+FROM nginx:1.31.2-alpine
 
 LABEL org.opencontainers.image.title="Docker Laravel by Prowect"
 LABEL org.opencontainers.image.description="Docker image for Laravel applications"
 LABEL org.opencontainers.image.authors="office@prowect.com"
 LABEL org.opencontainers.image.source="https://github.com/Prowect/Docker-Laravel"
 
-ENV ALPINE_VERSION=v3.22
-ENV PHP_VERSION=php83
-ENV PHP_FPM_VERSION=php-fpm83
+ENV ALPINE_VERSION=v3.23
+ENV PHP_VERSION=php85
+ENV PHP_FPM_VERSION=php-fpm85
 
 # install 
 RUN \
@@ -32,9 +32,7 @@ RUN \
         ${PHP_VERSION}-gd@community \
         ${PHP_VERSION}-iconv@community \
         ${PHP_VERSION}-intl@community \
-        ${PHP_VERSION}-json@community \
         ${PHP_VERSION}-mbstring@community \
-        ${PHP_VERSION}-opcache@community \
         ${PHP_VERSION}-openssl@community \
         ${PHP_VERSION}-pcntl@community \
         ${PHP_VERSION}-pdo@community \
@@ -44,12 +42,12 @@ RUN \
         ${PHP_VERSION}-pecl-imagick@community \
         ${PHP_VERSION}-phar@community \
         ${PHP_VERSION}-posix@community \
-        ${PHP_VERSION}-redis@community \
+        ${PHP_VERSION}-pecl-redis@community \
         ${PHP_VERSION}-session@community \
         ${PHP_VERSION}-simplexml@community \
         ${PHP_VERSION}-sodium@community \
         ${PHP_VERSION}-tokenizer@community \
-        ${PHP_VERSION}-xdebug@community \
+        ${PHP_VERSION}-pecl-xdebug@community \
         ${PHP_VERSION}-xml@community \
         ${PHP_VERSION}-xmlreader@community \
         ${PHP_VERSION}-xmlwriter@community \
@@ -58,7 +56,8 @@ RUN \
 
 # install composer
 ADD https://getcomposer.org/composer.phar /usr/local/bin/composer
-RUN chmod +x /usr/local/bin/composer && \
+RUN ln -sf /usr/bin/${PHP_VERSION} /usr/bin/php && \
+    chmod +x /usr/local/bin/composer && \
     composer self-update --no-interaction --2 && \
     # install other packages (required for Laravel)
     apk --update add --no-cache \
@@ -91,6 +90,7 @@ RUN sed -i \
     sed -i -e "s|upload_max_filesize\s*=.*|upload_max_filesize = 128M|" \
     -e "s|max_file_uploads\s*=.*|max_file_uploads = 50|" \
     -e "s|post_max_size\s*=.*|post_max_size = 128M|" \
+    -e "s|expose_php\s*=.*|expose_php = Off|" \
     -e "s|;cgi.fix_pathinfo\s*=.*|cgi.fix_pathinfo = 1|" \
     /etc/${PHP_VERSION}/php.ini
 
