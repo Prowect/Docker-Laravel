@@ -13,6 +13,7 @@ ENV PHP_FPM_VERSION=php-fpm85
 RUN \
     echo "https://dl-cdn.alpinelinux.org/alpine/$ALPINE_VERSION/main" >> /etc/apk/repositories && \
     echo "@community https://dl-cdn.alpinelinux.org/alpine/$ALPINE_VERSION/community" >> /etc/apk/repositories && \
+    apk upgrade --no-cache && \
     apk --update add --no-cache \
         curl \
         exiftool \
@@ -54,11 +55,11 @@ RUN \
         ${PHP_VERSION}-zip@community \
         ${PHP_VERSION}@community
 
-# install composer
-ADD https://getcomposer.org/composer.phar /usr/local/bin/composer
+# install a verified Composer release
+ADD --checksum=sha256:5ee7125f8a30a34d246cefdc0bc85b8a783b28f2aec968994118512350d28027 \
+    https://getcomposer.org/download/2.10.2/composer.phar /usr/local/bin/composer
 RUN ln -sf /usr/bin/${PHP_VERSION} /usr/bin/php && \
     chmod +x /usr/local/bin/composer && \
-    composer self-update --no-interaction --2 && \
     # install other packages (required for Laravel)
     apk --update add --no-cache \
         nodejs-current@community \
@@ -70,7 +71,9 @@ RUN ln -sf /usr/bin/${PHP_VERSION} /usr/bin/php && \
     # forward logs to stdout and stderr
     ln -sf /var/log/${PHP_VERSION}/error.log /dev/stderr
 
-# add custom config (feel free to override this files by yourself)
+# add custom config (feel free to override these files yourself)
+COPY config/nginx/health.conf /etc/nginx/conf.d/00-health.conf
+COPY config/nginx/security.conf /etc/nginx/conf.d/00-security.conf
 COPY config/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 COPY config/vim/vimrc /etc/vim/vimrc
 COPY config/php/xdebug/xdebug.ini /etc/${PHP_VERSION}/templates/xdebug.ini
@@ -91,7 +94,7 @@ RUN sed -i \
     -e "s|max_file_uploads\s*=.*|max_file_uploads = 50|" \
     -e "s|post_max_size\s*=.*|post_max_size = 128M|" \
     -e "s|expose_php\s*=.*|expose_php = Off|" \
-    -e "s|;cgi.fix_pathinfo\s*=.*|cgi.fix_pathinfo = 1|" \
+    -e "s|;cgi.fix_pathinfo\s*=.*|cgi.fix_pathinfo = 0|" \
     /etc/${PHP_VERSION}/php.ini
 
 # add runsvdir services
@@ -113,5 +116,8 @@ RUN echo "* * * * * /usr/bin/php /data/www/artisan schedule:run" >> /etc/crontab
 WORKDIR /data/www
 
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl --fail --silent --show-error http://127.0.0.1:8081/healthz > /dev/null || exit 1
 
 ENTRYPOINT [ "/main-entrypoint.sh" ]

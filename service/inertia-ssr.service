@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$INERTIA_SSR_ENABLED" == "true" ]; then
+if [ "${INERTIA_SSR_ENABLED:-false}" = "true" ]; then
     echo "Starting inertia SSR"
     exec chpst -u nginx /usr/bin/php /data/www/artisan inertia:start-ssr
 else

@@ -1,8 +1,8 @@
 #!/bin/sh
 
-if [ "$CRONJOBS_ENABLED" == "true" ]; then
+if [ "${CRONJOBS_ENABLED:-false}" = "true" ]; then
     echo "Starting cronjobs"
-    /usr/sbin/crond -f
+    exec /usr/sbin/crond -f
 else
     echo "Cronjobs - skipped (because not enabled)"
     sv down crontab

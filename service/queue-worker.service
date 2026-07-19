@@ -1,11 +1,14 @@
 #!/bin/sh
 
-if [ "$HORIZON_ENABLED" == "true" ]; then
+if [ "${HORIZON_ENABLED:-false}" = "true" ]; then
     echo "Starting laravel horizon"
     exec chpst -u nginx /usr/bin/php /data/www/artisan horizon
-elif [ "$QUEUE_CONNECTION" != "sync" ]; then
+elif [ -n "${QUEUE_CONNECTION:-}" ] && [ "$QUEUE_CONNECTION" != "sync" ]; then
     echo "Starting laravel queue worker"
-    exec chpst -u nginx /usr/bin/php /data/www/artisan queue:work --daemon --sleep=${QUEUE_CONNECTION_SLEEP:-'3'} --tries=${QUEUE_CONNECTION_TRIES:-'1'} --memory=${QUEUE_CONNECTION_MEMORY:-'512M'}
+    exec chpst -u nginx /usr/bin/php /data/www/artisan queue:work \
+        --sleep="${QUEUE_CONNECTION_SLEEP:-3}" \
+        --tries="${QUEUE_CONNECTION_TRIES:-1}" \
+        --memory="${QUEUE_CONNECTION_MEMORY:-512}"
 else
     echo "Queue Worker - skipped (because not enabled)"
     sv down queue-worker
