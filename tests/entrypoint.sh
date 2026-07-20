@@ -131,6 +131,20 @@ printf '%s\n' "$FPM_INFO" | grep -Fq 'cgi.fix_pathinfo => Off => Off'
 printf '%s\n' "$FPM_INFO" | grep -Fq 'expose_php => Off => Off'
 printf '%s\n' "$FPM_INFO" | grep -Fq 'upload_max_filesize => 128M => 128M'
 
+RUNTIME_VERSIONS=$(docker run --rm --entrypoint /bin/sh "$IMAGE" -c '
+    nginx -v 2>&1
+    node --version
+    cat /etc/alpine-release
+    cat /etc/apk/repositories
+')
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Fqx 'nginx version: nginx/1.31.3'
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^v24\.'
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^3\.24\.'
+if printf '%s\n' "$RUNTIME_VERSIONS" | grep -E '/v3\.[0-9]+/' | grep -Fqv '/v3.24/'; then
+    echo "Image contains a package repository from another Alpine release." >&2
+    exit 1
+fi
+
 QUEUE_OUTPUT=$(docker run --rm --entrypoint /bin/sh "$IMAGE" -c \
     'unset QUEUE_CONNECTION HORIZON_ENABLED; /etc/service/queue-worker/run 2>&1 || true')
 printf '%s\n' "$QUEUE_OUTPUT" | grep -Fq 'Queue Worker - skipped'

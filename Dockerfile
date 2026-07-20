@@ -1,17 +1,16 @@
-FROM nginx:1.31.2-alpine
+FROM nginx:1.31.3-alpine3.24
 
 LABEL org.opencontainers.image.title="Docker Laravel by Prowect"
 LABEL org.opencontainers.image.description="Docker image for Laravel applications"
 LABEL org.opencontainers.image.authors="office@prowect.com"
 LABEL org.opencontainers.image.source="https://github.com/Prowect/Docker-Laravel"
 
-ENV ALPINE_VERSION=v3.23
+ENV ALPINE_VERSION=v3.24
 ENV PHP_VERSION=php85
 ENV PHP_FPM_VERSION=php-fpm85
 
 # install 
 RUN \
-    echo "https://dl-cdn.alpinelinux.org/alpine/$ALPINE_VERSION/main" >> /etc/apk/repositories && \
     echo "@community https://dl-cdn.alpinelinux.org/alpine/$ALPINE_VERSION/community" >> /etc/apk/repositories && \
     apk upgrade --no-cache && \
     apk --update add --no-cache \
@@ -62,7 +61,7 @@ RUN ln -sf /usr/bin/${PHP_VERSION} /usr/bin/php && \
     chmod +x /usr/local/bin/composer && \
     # install other packages (required for Laravel)
     apk --update add --no-cache \
-        nodejs-current@community \
+        nodejs \
         npm@community \
     && \
     # cleanup apk

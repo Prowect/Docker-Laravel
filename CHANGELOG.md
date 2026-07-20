@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0.1] - 2026-07-20
+
+### Security
+
+- Upgraded NGINX from 1.31.2 to 1.31.3 to fix the `map` and regular-expression heap buffer overflow tracked as CVE-2026-42533.
+- The NGINX update also fixes CVE-2026-60005 in `ngx_http_slice_module` and CVE-2026-56434 in `ngx_http_ssi_module`.
+- Updated and pinned the NGINX base image to Alpine Linux 3.24 to prevent packages from different Alpine releases being mixed.
+- Kept the bundled Node.js runtime on the 24 LTS release line while updating Alpine packages.
+
 ## [3.0.0] - 2026-07-19
 
 ### Breaking changes

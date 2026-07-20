@@ -3,11 +3,12 @@
 This Docker image provides everything you need to set up a Laravel application. With this image you can start developing directly without any dependencies.
 
 Following packages are included:
+ - Alpine Linux (3.24)
  - PHP (8.5)
  - PHP-FPM (8.5)
  - Composer (2.10.2)
- - NGINX (1.31)
- - Node (24.15)
+ - NGINX (1.31.3)
+ - Node (24.17)
  - NPM
 
 Also already included/supported:
