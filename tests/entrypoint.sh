@@ -12,6 +12,9 @@ cleanup() {
     if [ -n "$CONTAINER_ID" ]; then
         docker rm -f "$CONTAINER_ID" > /dev/null 2>&1 || true
     fi
+    docker run --rm --entrypoint chown \
+        -v "$TEST_DIRECTORY:/test" "$IMAGE" \
+        -R "$(id -u):$(id -g)" /test > /dev/null 2>&1 || true
     rm -rf "$TEST_DIRECTORY"
 }
 trap cleanup EXIT
