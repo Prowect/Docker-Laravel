@@ -154,7 +154,7 @@ docker run --rm --entrypoint php "$IMAGE" -r '
 
 FPM_INFO=$(docker run --rm --entrypoint /bin/sh "$IMAGE" -c \
     'php-fpm -c "$PHP_INI_DIR" -i 2>/dev/null')
-printf '%s\n' "$FPM_INFO" | grep -Fq 'Loaded Configuration File => /usr/local/etc/php/php.ini'
+printf '%s\n' "$FPM_INFO" | grep -Fq 'Loaded Configuration File => /etc/php85/php.ini'
 printf '%s\n' "$FPM_INFO" | grep -Fq 'cgi.fix_pathinfo => Off => Off'
 printf '%s\n' "$FPM_INFO" | grep -Fq 'expose_php => Off => Off'
 printf '%s\n' "$FPM_INFO" | grep -Fq 'upload_max_filesize => 128M => 128M'

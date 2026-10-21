@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+### Changed
+
+- Replaced the custom PHP build with Alpine 3.24's PHP 8.5.12 packages on AMD64 and ARM64.
+- Custom PHP configuration mounts use `/etc/php85` again.
+
 ## [3.0.2] - 2026-10-21
 
 ### Changed
