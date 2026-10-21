@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+### Changed
+
+- Updated the Alpine 3.24 base image to NGINX 1.31.7 and Composer to 2.10.3.
+- Kept Node.js on the 24 LTS line and npm on Alpine's current packages; `apk upgrade` refreshes all installed Alpine packages during the build.
+- Use the official PHP 8.5.12 image and compile extensions against it. PHP-FPM and CLI both use the fixed release.
+
 ## [3.0.1] - 2026-07-20
 
 ### Security

@@ -1,4 +1,22 @@
-FROM nginx:1.31.3-alpine3.24
+FROM php:8.5.12-fpm-alpine3.24 AS php-build
+
+# Compile all extensions against the same PHP source and ABI.
+RUN set -eux; \
+    apk add --no-cache $PHPIZE_DEPS linux-headers icu-dev libzip-dev libpng-dev \
+        libjpeg-turbo-dev freetype-dev libwebp-dev postgresql-dev \
+        imagemagick-dev; \
+    cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
+    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp; \
+    docker-php-ext-install -j "$(nproc)" exif gd intl pcntl \
+        pdo_mysql pdo_pgsql sockets zip; \
+    pecl install igbinary-3.2.17RC1 msgpack-3.0.1; \
+    docker-php-ext-enable igbinary msgpack; \
+    printf 'yes\nno\nno\nyes\nno\nno\n' | pecl install redis-6.3.0; \
+    pecl install imagick-3.8.1 xdebug-3.5.3; \
+    docker-php-ext-enable redis imagick; \
+    php -r 'foreach (["exif", "gd", "igbinary", "imagick", "intl", "msgpack", "pcntl", "pdo_mysql", "pdo_pgsql", "redis", "sockets", "zip"] as $extension) { if (!extension_loaded($extension)) { exit(1); } }'
+
+FROM nginx:1.31.7-alpine3.24
 
 LABEL org.opencontainers.image.title="Docker Laravel by Prowect"
 LABEL org.opencontainers.image.description="Docker image for Laravel applications"
@@ -6,95 +24,48 @@ LABEL org.opencontainers.image.authors="office@prowect.com"
 LABEL org.opencontainers.image.source="https://github.com/Prowect/Docker-Laravel"
 
 ENV ALPINE_VERSION=v3.24
-ENV PHP_VERSION=php85
-ENV PHP_FPM_VERSION=php-fpm85
+ENV PHP_INI_DIR=/usr/local/etc/php
 
-# install 
-RUN \
-    echo "@community https://dl-cdn.alpinelinux.org/alpine/$ALPINE_VERSION/community" >> /etc/apk/repositories && \
-    apk upgrade --no-cache && \
-    apk --update add --no-cache \
-        curl \
-        exiftool \
-        imagemagick \
-        nghttp2 \
-        runit@community \
-        vim \
-    && \
-    # install PHP (incl. required extensions for laravel)
-    apk --update add --no-cache \
-        ${PHP_VERSION}-ctype@community \
-        ${PHP_VERSION}-curl@community \
-        ${PHP_VERSION}-dom@community \
-        ${PHP_VERSION}-exif@community \
-        ${PHP_VERSION}-fileinfo@community \
-        ${PHP_VERSION}-fpm@community \
-        ${PHP_VERSION}-gd@community \
-        ${PHP_VERSION}-iconv@community \
-        ${PHP_VERSION}-intl@community \
-        ${PHP_VERSION}-mbstring@community \
-        ${PHP_VERSION}-openssl@community \
-        ${PHP_VERSION}-pcntl@community \
-        ${PHP_VERSION}-pdo@community \
-        ${PHP_VERSION}-pdo_mysql@community \
-        ${PHP_VERSION}-pdo_pgsql@community \
-        ${PHP_VERSION}-pdo_sqlite@community \
-        ${PHP_VERSION}-pecl-imagick@community \
-        ${PHP_VERSION}-phar@community \
-        ${PHP_VERSION}-posix@community \
-        ${PHP_VERSION}-pecl-redis@community \
-        ${PHP_VERSION}-session@community \
-        ${PHP_VERSION}-simplexml@community \
-        ${PHP_VERSION}-sodium@community \
-        ${PHP_VERSION}-tokenizer@community \
-        ${PHP_VERSION}-pecl-xdebug@community \
-        ${PHP_VERSION}-xml@community \
-        ${PHP_VERSION}-xmlreader@community \
-        ${PHP_VERSION}-xmlwriter@community \
-        ${PHP_VERSION}-zip@community \
-        ${PHP_VERSION}@community
+COPY --from=php-build /usr/local /usr/local
+
+RUN set -eux; \
+    apk upgrade --no-cache; \
+    apk add --no-cache curl exiftool imagemagick nghttp2 runit vim \
+        nodejs npm; \
+    apk add --no-cache --virtual .scan-deps scanelf; \
+    runDeps="$(scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
+        | tr ',' '\n' | sort -u \
+        | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }')"; \
+    apk add --no-cache $runDeps; \
+    apk del --no-network .scan-deps; \
+    ln -sf /usr/local/bin/php /usr/bin/php; \
+    php -r 'if (PHP_VERSION_ID < 80512) { exit(1); }'; \
+    php-fpm -v
 
 # install a verified Composer release
-ADD --checksum=sha256:5ee7125f8a30a34d246cefdc0bc85b8a783b28f2aec968994118512350d28027 \
-    https://getcomposer.org/download/2.10.2/composer.phar /usr/local/bin/composer
-RUN ln -sf /usr/bin/${PHP_VERSION} /usr/bin/php && \
-    chmod +x /usr/local/bin/composer && \
-    # install other packages (required for Laravel)
-    apk --update add --no-cache \
-        nodejs \
-        npm@community \
-    && \
-    # cleanup apk
-    rm -rf /var/cache/apk/* \
-    && \
-    # forward logs to stdout and stderr
-    ln -sf /var/log/${PHP_VERSION}/error.log /dev/stderr
+ADD --checksum=sha256:7a2d379d5b8ffdaa028580ef26494c36d2feef4b178d3dd1473a4dbc5e17c8d6 \
+    https://getcomposer.org/download/2.10.3/composer.phar /usr/local/bin/composer
+RUN chmod +x /usr/local/bin/composer
 
 # add custom config (feel free to override these files yourself)
 COPY config/nginx/health.conf /etc/nginx/conf.d/00-health.conf
 COPY config/nginx/security.conf /etc/nginx/conf.d/00-security.conf
 COPY config/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 COPY config/vim/vimrc /etc/vim/vimrc
-COPY config/php/xdebug/xdebug.ini /etc/${PHP_VERSION}/templates/xdebug.ini
+COPY config/php/xdebug/xdebug.ini ${PHP_INI_DIR}/templates/xdebug.ini
 
 RUN sed -i \
-    -e "s|user = nobody|user = nginx|" \
-    -e "s|;php_admin_value\[error_log\]\s=.*|php_admin_value\[error_log\] = /var/log/${PHP_VERSION}/error.log|" \
-    -e "s|;php_admin_flag\[log_errors\]\s=.*|php_admin_flag[log_errors] = on|" \
-    -e "s/;clear_env = no/clear_env = no/g" \
-    /etc/${PHP_VERSION}/php-fpm.d/www.conf \
-    && \
-    sed -i -e "s|;daemonize\s*=.*|daemonize = no|" \
-    -e "s|listen\s*=.*|listen = 9000|" \
-    -e "s|;error_log = log/${PHP_VERSION}/error.log|error_log = log/nginx/error.log|" \
-    /etc/${PHP_VERSION}/php-fpm.conf \
-    && \
-    sed -i -e "s|upload_max_filesize\s*=.*|upload_max_filesize = 128M|" \
-    -e "s|max_file_uploads\s*=.*|max_file_uploads = 50|" \
-    -e "s|post_max_size\s*=.*|post_max_size = 128M|" \
-    -e "s|expose_php\s*=.*|expose_php = Off|" \
-    -e "s|;cgi.fix_pathinfo\s*=.*|cgi.fix_pathinfo = 0|" \
-    /etc/${PHP_VERSION}/php.ini
+    -e "s|^user = www-data$|user = nginx|" \
+    -e "s|^group = www-data$|group = nginx|" \
+    /usr/local/etc/php-fpm.d/www.conf \
+    && sed -i \
+    -e "s|upload_max_filesize\\s*=.*|upload_max_filesize = 128M|" \
+    -e "s|max_file_uploads\\s*=.*|max_file_uploads = 50|" \
+    -e "s|post_max_size\\s*=.*|post_max_size = 128M|" \
+    -e "s|expose_php\\s*=.*|expose_php = Off|" \
+    -e "s|;cgi.fix_pathinfo\\s*=.*|cgi.fix_pathinfo = 0|" \
+    "${PHP_INI_DIR}/php.ini" \
+    && php-fpm -t
 
 # add runsvdir services
 COPY service/crontab.service /etc/service/crontab/run

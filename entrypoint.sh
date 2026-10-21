@@ -122,10 +122,10 @@ if [ "$PASSPORT_ENABLED" = "true" ]; then
 fi
 
 # Enable/disable XDEBUG
-XDEBUG_INI_PATH="/etc/${PHP_VERSION}/conf.d/xdebug.ini"
+XDEBUG_INI_PATH="${PHP_INI_DIR}/conf.d/xdebug.ini"
 if [ "$XDEBUG_ENABLED" = "true" ]; then
     echo -e "${BASH_COLOR_WARNING}Enabling XDEBUG${BASH_COLOR_RESET}"
-    ln -sf "/etc/${PHP_VERSION}/templates/xdebug.ini" "$XDEBUG_INI_PATH"
+    ln -sf "${PHP_INI_DIR}/templates/xdebug.ini" "$XDEBUG_INI_PATH"
 else 
     echo -e "${BASH_COLOR_WARNING}Disabling XDEBUG${BASH_COLOR_RESET}"
     if [ -L "$XDEBUG_INI_PATH" ]; then

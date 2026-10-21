@@ -70,7 +70,7 @@ if [ -z "$APP_DIRECTORY" ] && { [ "$REPEAT" -ne 1 ] || [ "$PARALLEL" -ne 1 ]; };
 fi
 
 echo "Building base image: $IMAGE"
-docker build --pull --tag "$IMAGE" .
+docker build --pull --no-cache --tag "$IMAGE" .
 
 echo "Running entrypoint and runtime tests ..."
 ./tests/entrypoint.sh "$IMAGE"

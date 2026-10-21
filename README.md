@@ -4,12 +4,11 @@ This Docker image provides everything you need to set up a Laravel application. 
 
 Following packages are included:
  - Alpine Linux (3.24)
- - PHP (8.5)
- - PHP-FPM (8.5)
- - Composer (2.10.2)
- - NGINX (1.31.3)
- - Node (24.17)
- - NPM
+ - PHP and PHP-FPM (8.5.12 or newer)
+ - Composer (2.10.3)
+ - NGINX (1.31.7)
+ - Node.js (24 LTS, from Alpine 3.24)
+ - npm (from Alpine 3.24)
 
 Also already included/supported:
  - Cronjobs (using php artisan schedule:run)
@@ -174,7 +173,7 @@ During `MODE=build`, the image defaults `CACHE_STORE` and `SESSION_DRIVER` to `a
 
 Version 3 is a breaking release. Before changing the image tag, verify the following:
 
-- The image uses PHP 8.5. Update Composer dependencies whose PHP constraints exclude PHP 8.5. Do not bypass this with `--ignore-platform-req=php`.
+- The image uses the official PHP 8.5.12 release and compiles its extensions against the same PHP version. Update Composer dependencies whose PHP constraints exclude PHP 8.5. Do not bypass this with `--ignore-platform-req=php`.
 - The entrypoint exits immediately when Composer, npm, Artisan, migration, synchronous seeding, or another setup command fails. Fix commands that previously failed without stopping the container.
 - Production builds use `composer install --no-dev --optimize-autoloader` and `npm ci`. Commit compatible `composer.lock` and `package-lock.json` or `npm-shrinkwrap.json` files.
 - The default for `ONSTART_SEEDER_WAIT` is now `true`. Set it to `false` only when asynchronous seeding is explicitly required and failures may be handled separately.

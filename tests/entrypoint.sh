@@ -43,7 +43,8 @@ cat > "$APP_DIRECTORY/public/index.php" <<'PHP'
 
 echo (ini_get('expose_php') ? 'on' : 'off')
     .'|'.ini_get('cgi.fix_pathinfo')
-    .'|'.ini_get('upload_max_filesize');
+    .'|'.ini_get('upload_max_filesize')
+    .'|'.getenv('TEST_FPM_ENV');
 PHP
 
 cat > "$CUSTOM_ENTRYPOINT" <<'SH'
@@ -81,6 +82,13 @@ OUTPUT=$(docker run --rm \
 
 printf '%s\n' "$OUTPUT" | grep -Fqx 'custom-argument=first'
 printf '%s\n' "$OUTPUT" | grep -Fqx 'custom-argument=second argument'
+
+XDEBUG_OUTPUT=$(docker run --rm \
+    -e APP_ENV=local \
+    -e XDEBUG_ENABLED=true \
+    -v "$APP_DIRECTORY:/data/www" \
+    "$IMAGE" php -m)
+printf '%s\n' "$XDEBUG_OUTPUT" | grep -Fqx 'xdebug'
 
 if docker run --rm \
     -e APP_ENV=local \
@@ -124,21 +132,44 @@ docker run --rm \
     -v "$APP_DIRECTORY:/data/www" \
     "$IMAGE" true > /dev/null
 
+docker run --rm --entrypoint php "$IMAGE" -r '
+    if (PHP_VERSION_ID < 80512) {
+        fwrite(STDERR, "PHP 8.5.12 or newer is required.\n");
+        exit(1);
+    }
+    foreach (["ctype", "curl", "dom", "exif", "fileinfo", "gd", "iconv", "igbinary", "imagick", "intl", "mbstring", "msgpack", "openssl", "pcntl", "pdo_mysql", "pdo_pgsql", "pdo_sqlite", "Phar", "posix", "redis", "session", "SimpleXML", "sodium", "sockets", "tokenizer", "xml", "xmlreader", "xmlwriter", "zip"] as $extension) {
+        if (!extension_loaded($extension)) {
+            fwrite(STDERR, "Missing PHP extension: $extension\n");
+            exit(1);
+        }
+    }
+    if (!defined("Redis::SERIALIZER_IGBINARY") || !defined("Redis::SERIALIZER_MSGPACK")) {
+        fwrite(STDERR, "Missing Redis serializers.\n");
+        exit(1);
+    }
+'
+
 FPM_INFO=$(docker run --rm --entrypoint /bin/sh "$IMAGE" -c \
-    '/usr/sbin/${PHP_FPM_VERSION} -c "/etc/${PHP_VERSION}" -i 2>/dev/null')
-printf '%s\n' "$FPM_INFO" | grep -Fq 'Loaded Configuration File => /etc/php85/php.ini'
+    'php-fpm -c "$PHP_INI_DIR" -i 2>/dev/null')
+printf '%s\n' "$FPM_INFO" | grep -Fq 'Loaded Configuration File => /usr/local/etc/php/php.ini'
 printf '%s\n' "$FPM_INFO" | grep -Fq 'cgi.fix_pathinfo => Off => Off'
 printf '%s\n' "$FPM_INFO" | grep -Fq 'expose_php => Off => Off'
 printf '%s\n' "$FPM_INFO" | grep -Fq 'upload_max_filesize => 128M => 128M'
 
 RUNTIME_VERSIONS=$(docker run --rm --entrypoint /bin/sh "$IMAGE" -c '
     nginx -v 2>&1
+    php-fpm -v
     node --version
+    npm --version
+    composer --version --no-ansi
     cat /etc/alpine-release
     cat /etc/apk/repositories
 ')
-printf '%s\n' "$RUNTIME_VERSIONS" | grep -Fqx 'nginx version: nginx/1.31.3'
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Fqx 'nginx version: nginx/1.31.7'
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^PHP 8\.5\.(1[2-9]|[2-9][0-9]) .*fpm-fcgi'
 printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^v24\.'
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^11\.'
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^Composer version 2\.10\.3 '
 printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^3\.24\.'
 if printf '%s\n' "$RUNTIME_VERSIONS" | grep -E '/v3\.[0-9]+/' | grep -Fqv '/v3.24/'; then
     echo "Image contains a package repository from another Alpine release." >&2
@@ -155,6 +186,7 @@ fi
 
 CONTAINER_ID=$(docker run --detach --rm \
     -e APP_ENV=production \
+    -e TEST_FPM_ENV=available \
     -v "$APP_DIRECTORY:/data/www" \
     -v "$CUSTOM_NGINX_CONFIG:/etc/nginx/conf.d/default.conf:ro" \
     "$IMAGE")
@@ -175,7 +207,7 @@ if [ "$HEALTHY" != true ]; then
 fi
 
 RUNTIME_PHP_INFO=$(docker exec "$CONTAINER_ID" curl --fail --silent http://127.0.0.1/index.php)
-if [ "$RUNTIME_PHP_INFO" != 'off|0|128M' ]; then
+if [ "$RUNTIME_PHP_INFO" != 'off|0|128M|available' ]; then
     echo "Unexpected PHP-FPM settings: $RUNTIME_PHP_INFO" >&2
     exit 1
 fi
