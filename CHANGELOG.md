@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - Updated the NGINX Alpine 3.24 base image to 1.31.8.
+- Updated GitHub checkout and Docker Actions to their Node.js 24 releases.
 
 ## [3.0.3] - 2026-10-21
 
