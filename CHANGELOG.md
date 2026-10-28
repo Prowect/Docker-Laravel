@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Security
+
+- Require the fixed Alpine 3.24 packages for Brotli, curl/libcurl, and Node.js 24 during image builds.
+
+### Changed
+
+- Updated the NGINX Alpine 3.24 base image to 1.31.8.
+
+## [3.0.3] - 2026-10-21
+
 ### Changed
 
 - Replaced the custom PHP build with Alpine 3.24's PHP 8.5.12 packages on AMD64 and ARM64.

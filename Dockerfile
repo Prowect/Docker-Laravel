@@ -1,4 +1,4 @@
-FROM nginx:1.31.7-alpine3.24
+FROM nginx:1.31.8-alpine3.24
 
 LABEL org.opencontainers.image.title="Docker Laravel by Prowect"
 LABEL org.opencontainers.image.description="Docker image for Laravel applications"
@@ -12,8 +12,9 @@ ENV PHP_INI_DIR=/etc/php85
 
 RUN set -eux; \
     apk upgrade --no-cache; \
-    apk add --no-cache curl exiftool imagemagick nghttp2 runit vim \
-        nodejs npm; \
+    apk add --no-cache 'brotli-libs>=1.2.1-r0' 'curl>=8.23.0-r0' \
+        'libcurl>=8.23.0-r0' exiftool imagemagick nghttp2 runit vim \
+        'nodejs>=24.22.1-r0' npm; \
     apk add --no-cache \
         ${PHP_VERSION}-ctype \
         ${PHP_VERSION}-curl \

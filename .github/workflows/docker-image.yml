@@ -42,6 +42,7 @@ jobs:
         with:
           context: .
           load: true
+          no-cache: true
           platforms: linux/arm64
           pull: true
           tags: docker-laravel:scan-arm64

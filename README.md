@@ -6,7 +6,7 @@ Following packages are included:
  - Alpine Linux (3.24)
  - PHP and PHP-FPM (8.5.12 or newer)
  - Composer (2.10.3)
- - NGINX (1.31.7)
+ - NGINX (1.31.8)
  - Node.js (24 LTS, from Alpine 3.24)
  - npm (from Alpine 3.24)
 

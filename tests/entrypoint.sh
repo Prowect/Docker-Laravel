@@ -168,7 +168,7 @@ RUNTIME_VERSIONS=$(docker run --rm --entrypoint /bin/sh "$IMAGE" -c '
     cat /etc/alpine-release
     cat /etc/apk/repositories
 ')
-printf '%s\n' "$RUNTIME_VERSIONS" | grep -Fqx 'nginx version: nginx/1.31.7'
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Fqx 'nginx version: nginx/1.31.8'
 printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^PHP 8\.5\.(1[2-9]|[2-9][0-9]) .*fpm-fcgi'
 printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^v24\.'
 printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^11\.'
@@ -178,6 +178,19 @@ if printf '%s\n' "$RUNTIME_VERSIONS" | grep -E '/v3\.[0-9]+/' | grep -Fqv '/v3.2
     echo "Image contains a package repository from another Alpine release." >&2
     exit 1
 fi
+
+docker run --rm --entrypoint /bin/sh "$IMAGE" -c '
+    set -eu
+    for requirement in brotli-libs:1.2.1-r0 curl:8.23.0-r0 libcurl:8.23.0-r0 nodejs:24.22.1-r0; do
+        package=${requirement%%:*}
+        minimum=${requirement#*:}
+        installed=$(apk info -v | sed -n "s/^${package}-//p")
+        if [ -z "$installed" ] || [ "$(apk version -t "$installed" "$minimum")" = "<" ]; then
+            echo "Package $package is missing or older than $minimum (installed: ${installed:-none})." >&2
+            exit 1
+        fi
+    done
+'
 
 QUEUE_OUTPUT=$(docker run --rm --entrypoint /bin/sh "$IMAGE" -c \
     'unset QUEUE_CONNECTION HORIZON_ENABLED; /etc/service/queue-worker/run 2>&1 || true')
