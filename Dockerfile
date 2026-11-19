@@ -1,4 +1,4 @@
-FROM nginx:1.31.8-alpine3.24
+FROM nginx:1.31.9-alpine3.24@sha256:90b6bd2aec278b16b98221d64deb1d6d35d164567f507ab0716e6053878315aa
 
 LABEL org.opencontainers.image.title="Docker Laravel by Prowect"
 LABEL org.opencontainers.image.description="Docker image for Laravel applications"
@@ -14,7 +14,8 @@ RUN set -eux; \
     apk upgrade --no-cache; \
     apk add --no-cache 'brotli-libs>=1.2.1-r0' 'curl>=8.23.0-r0' \
         'libcurl>=8.23.0-r0' exiftool imagemagick nghttp2 runit vim \
-        'nodejs>=24.22.1-r0' npm; \
+        'nodejs>=24.22.3-r0' 'nodejs<25' 'npm<12'; \
+    npm install --global npm@11.21.3; \
     apk add --no-cache \
         ${PHP_VERSION}-ctype \
         ${PHP_VERSION}-curl \
@@ -52,12 +53,12 @@ RUN set -eux; \
     ln -sf /usr/bin/${PHP_VERSION} /usr/bin/php; \
     ln -sf /usr/sbin/${PHP_FPM_VERSION} /usr/sbin/php-fpm; \
     ln -sf /var/log/${PHP_VERSION}/error.log /dev/stderr; \
-    php -r 'if (PHP_VERSION_ID < 80512) { exit(1); }'; \
+    php -r 'if (PHP_VERSION_ID < 80512 || PHP_VERSION_ID >= 80600) { exit(1); }'; \
     php-fpm -v
 
 # install a verified Composer release
-ADD --checksum=sha256:7a2d379d5b8ffdaa028580ef26494c36d2feef4b178d3dd1473a4dbc5e17c8d6 \
-    https://getcomposer.org/download/2.10.3/composer.phar /usr/local/bin/composer
+ADD --checksum=sha256:dd158c0afd41d15fac89e1b4e47b5d42911fe316c3687cd5edac98319b25d028 \
+    https://getcomposer.org/download/2.11.2/composer.phar /usr/local/bin/composer
 RUN chmod +x /usr/local/bin/composer
 
 # add custom config (feel free to override these files yourself)

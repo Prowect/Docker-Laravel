@@ -136,8 +136,8 @@ docker run --rm \
     "$IMAGE" true > /dev/null
 
 docker run --rm --entrypoint php "$IMAGE" -r '
-    if (PHP_VERSION_ID < 80512) {
-        fwrite(STDERR, "PHP 8.5.12 or newer is required.\n");
+    if (PHP_VERSION_ID < 80512 || PHP_VERSION_ID >= 80600) {
+        fwrite(STDERR, "PHP 8.5.12 or newer within PHP 8.5 is required.\n");
         exit(1);
     }
     foreach (["ctype", "curl", "dom", "exif", "fileinfo", "gd", "iconv", "igbinary", "imagick", "intl", "mbstring", "msgpack", "openssl", "pcntl", "pdo_mysql", "pdo_pgsql", "pdo_sqlite", "Phar", "posix", "redis", "session", "SimpleXML", "sodium", "sockets", "tokenizer", "xml", "xmlreader", "xmlwriter", "zip"] as $extension) {
@@ -168,11 +168,11 @@ RUNTIME_VERSIONS=$(docker run --rm --entrypoint /bin/sh "$IMAGE" -c '
     cat /etc/alpine-release
     cat /etc/apk/repositories
 ')
-printf '%s\n' "$RUNTIME_VERSIONS" | grep -Fqx 'nginx version: nginx/1.31.8'
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Fqx 'nginx version: nginx/1.31.9'
 printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^PHP 8\.5\.(1[2-9]|[2-9][0-9]) .*fpm-fcgi'
 printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^v24\.'
-printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^11\.'
-printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^Composer version 2\.10\.3 '
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Fxq '11.21.3'
+printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^Composer version 2\.11\.2 '
 printf '%s\n' "$RUNTIME_VERSIONS" | grep -Eq '^3\.24\.'
 if printf '%s\n' "$RUNTIME_VERSIONS" | grep -E '/v3\.[0-9]+/' | grep -Fqv '/v3.24/'; then
     echo "Image contains a package repository from another Alpine release." >&2
@@ -181,7 +181,7 @@ fi
 
 docker run --rm --entrypoint /bin/sh "$IMAGE" -c '
     set -eu
-    for requirement in brotli-libs:1.2.1-r0 curl:8.23.0-r0 libcurl:8.23.0-r0 nodejs:24.22.1-r0; do
+    for requirement in brotli-libs:1.2.1-r0 curl:8.23.0-r0 libcurl:8.23.0-r0 nodejs:24.22.3-r0; do
         package=${requirement%%:*}
         minimum=${requirement#*:}
         installed=$(apk info -v | sed -n "s/^${package}-//p")
