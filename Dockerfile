@@ -49,11 +49,11 @@ RUN set -eux; \
         ${PHP_VERSION}-xmlreader \
         ${PHP_VERSION}-xmlwriter \
         ${PHP_VERSION}-zip \
-        ${PHP_VERSION}; \
+        "${PHP_VERSION}>=8.5.13-r0"; \
     ln -sf /usr/bin/${PHP_VERSION} /usr/bin/php; \
     ln -sf /usr/sbin/${PHP_FPM_VERSION} /usr/sbin/php-fpm; \
     ln -sf /var/log/${PHP_VERSION}/error.log /dev/stderr; \
-    php -r 'if (PHP_VERSION_ID < 80512 || PHP_VERSION_ID >= 80600) { exit(1); }'; \
+    php -r 'if (PHP_VERSION_ID < 80513 || PHP_VERSION_ID >= 80600) { exit(1); }'; \
     php-fpm -v
 
 # install a verified Composer release

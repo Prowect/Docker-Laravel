@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0.6] - 2026-11-20
+
+### Security
+
+- Require PHP 8.5.13 or newer within PHP 8.5 from Alpine 3.24; verify CLI, FPM, and extensions on AMD64 and ARM64.
+
 ## Unreleased
 
 ### Security
